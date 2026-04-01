@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jinan Weather</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="aurora aurora-left"></div>
+      <div class="aurora aurora-right"></div>
+
+      <main class="weather-app" id="app" data-theme="sunny">
+        <header class="hero glass-card">
+          <div class="hero-top">
+            <div>
+              <h1 id="city-name">Jinan Weather</h1>
+              <p class="date-text" id="date-text">오늘</p>
+            </div>
+
+            <button class="icon-button" id="geo-button" type="button" aria-label="현재 위치 사용">
+              <span>◎</span>
+            </button>
+          </div>
+
+          <form class="search-bar" id="search-form">
+            <input
+              id="city-input"
+              name="city"
+              type="search"
+              placeholder="도시 검색"
+              autocomplete="off"
+              aria-label="도시 검색"
+            />
+            <button type="submit">검색</button>
+          </form>
+
+          <section class="compare-weather">
+            <article class="day-panel day-panel-yesterday">
+              <p class="panel-label">어제</p>
+              <p class="condition" id="yesterday-condition">불러오는 중...</p>
+              <div class="temperature-wrap">
+                <span class="current-temp compare-temp" id="yesterday-temp">--°</span>
+                <span class="weather-icon" id="yesterday-icon" aria-hidden="true">☁</span>
+              </div>
+              <p class="temp-range" id="yesterday-range">최고 --° / 최저 --°</p>
+            </article>
+
+            <article class="day-panel day-panel-today">
+              <p class="panel-label">오늘</p>
+              <p class="condition" id="condition-text">불러오는 중...</p>
+              <div class="temperature-wrap">
+                <span class="current-temp compare-temp" id="current-temp">--°</span>
+                <span class="weather-icon" id="current-icon" aria-hidden="true">☀</span>
+              </div>
+              <p class="temp-range" id="temp-range">최고 --° / 최저 --°</p>
+            </article>
+          </section>
+
+          <section class="glass-strip comparison-strip">
+            <div class="strip-title-row">
+              <p class="strip-title">비교 요약</p>
+              <p class="strip-note" id="compare-summary">어제와 오늘을 비교하는 중</p>
+            </div>
+            <div class="delta-chips">
+              <div class="delta-chip">
+                <span>현재 기온 차이</span>
+                <strong id="temp-delta">--°</strong>
+              </div>
+              <div class="delta-chip">
+                <span>체감 차이</span>
+                <strong id="feels-delta">--°</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="compare-metrics">
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">체감온도</p>
+                <span id="feels-compare-text">어제와 비슷해요</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-feels-like">--°</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="feels-like">--°</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">강수확률</p>
+                <span id="rain-compare-text">어제와 비슷해요</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-precipitation">--%</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="precipitation">--%</strong>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="details-grid" id="details-grid">
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">습도</p>
+                <span id="humidity-text">쾌적함을 계산 중</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-humidity">--%</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="humidity">--%</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">바람</p>
+                <span id="wind-text">바람 상태를 계산 중</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-wind-speed">-- km/h</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="wind-speed">-- km/h</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">미세먼지</p>
+                <span id="pm10-text">대기질을 계산 중</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-pm10">--</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="pm10">--</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">자외선</p>
+                <span id="uv-text">지수 정보를 계산 중</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-uv-index">--</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="uv-index">--</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="glass-card compare-card">
+              <div class="compare-card-header">
+                <p class="detail-label">가시거리</p>
+                <span id="visibility-text">대기 상태를 계산 중</span>
+              </div>
+              <div class="compare-values">
+                <div class="compare-column">
+                  <span class="compare-label">어제</span>
+                  <strong id="yesterday-visibility">-- km</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">오늘</span>
+                  <strong id="visibility">-- km</strong>
+                </div>
+              </div>
+            </article>
+          </section>
+        </header>
+
+        <section class="glass-card forecast-card tabs-card">
+          <div class="tabs-header">
+            <div class="tab-buttons" role="tablist" aria-label="예보 보기">
+              <button class="tab-button is-active" id="tab-hourly" type="button" data-tab="hourly" role="tab" aria-selected="true">
+                시간별 예보
+              </button>
+              <button class="tab-button" id="tab-daily" type="button" data-tab="daily" role="tab" aria-selected="false">
+                10일 예보
+              </button>
+            </div>
+            <small class="tab-caption" id="tab-caption">다음 24시간</small>
+          </div>
+
+          <div class="tab-panel is-active" id="panel-hourly" data-panel="hourly" role="tabpanel">
+            <div class="hourly-list" id="hourly-list"></div>
+          </div>
+
+          <div class="tab-panel" id="panel-daily" data-panel="daily" role="tabpanel" hidden>
+            <div class="daily-list" id="daily-list"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="hourly-item-template">
+      <article class="hourly-item">
+        <p class="hourly-time"></p>
+        <span class="hourly-icon"></span>
+        <p class="hourly-temp"></p>
+        <p class="hourly-rain"></p>
+      </article>
+    </template>
+
+    <template id="daily-item-template">
+      <article class="daily-item">
+        <p class="daily-day"></p>
+        <div class="daily-condition">
+          <span class="daily-icon"></span>
+          <span class="daily-text"></span>
+        </div>
+        <div class="daily-bar">
+          <span class="daily-low"></span>
+          <div class="bar-track">
+            <div class="bar-range"></div>
+          </div>
+          <span class="daily-high"></span>
+        </div>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
