@@ -40,6 +40,7 @@ const elements = {
   tabCaption: document.querySelector("#tab-caption"),
   tabButtons: Array.from(document.querySelectorAll(".tab-button")),
   tabPanels: Array.from(document.querySelectorAll(".tab-panel")),
+  toast: document.querySelector("#toast"),
   searchForm: document.querySelector("#search-form"),
   cityInput: document.querySelector("#city-input"),
   geoButton: document.querySelector("#geo-button"),
@@ -47,33 +48,35 @@ const elements = {
   dailyTemplate: document.querySelector("#daily-item-template"),
 };
 
+let toastTimer = null;
+
 const weatherCodeMap = {
-  0: { label: "맑음", icon: "☀", theme: "sunny" },
-  1: { label: "대체로 맑음", icon: "🌤", theme: "sunny" },
-  2: { label: "구름 조금", icon: "⛅", theme: "cloudy" },
-  3: { label: "흐림", icon: "☁", theme: "cloudy" },
-  45: { label: "안개", icon: "🌫", theme: "cloudy" },
-  48: { label: "짙은 안개", icon: "🌫", theme: "cloudy" },
-  51: { label: "이슬비", icon: "🌦", theme: "rain" },
-  53: { label: "약한 비", icon: "🌦", theme: "rain" },
-  55: { label: "비", icon: "🌧", theme: "rain" },
-  61: { label: "가벼운 비", icon: "🌦", theme: "rain" },
-  63: { label: "비", icon: "🌧", theme: "rain" },
-  65: { label: "강한 비", icon: "⛈", theme: "rain" },
-  66: { label: "어는 비", icon: "🌧", theme: "rain" },
-  67: { label: "강한 어는 비", icon: "⛈", theme: "rain" },
-  71: { label: "약한 눈", icon: "🌨", theme: "snow" },
-  73: { label: "눈", icon: "🌨", theme: "snow" },
-  75: { label: "강한 눈", icon: "❄", theme: "snow" },
-  77: { label: "진눈깨비", icon: "🌨", theme: "snow" },
-  80: { label: "소나기", icon: "🌦", theme: "rain" },
-  81: { label: "강한 소나기", icon: "🌧", theme: "rain" },
-  82: { label: "폭우", icon: "⛈", theme: "rain" },
-  85: { label: "약한 눈 소나기", icon: "🌨", theme: "snow" },
-  86: { label: "눈 소나기", icon: "❄", theme: "snow" },
-  95: { label: "뇌우", icon: "⛈", theme: "rain" },
-  96: { label: "우박을 동반한 뇌우", icon: "⛈", theme: "rain" },
-  99: { label: "강한 뇌우", icon: "⛈", theme: "rain" },
+  0: { label: "맑음", icon: "☀️", theme: "sunny" },
+  1: { label: "대체로 맑음", icon: "🌤️", theme: "sunny" },
+  2: { label: "구름 조금", icon: "⛅️", theme: "cloudy" },
+  3: { label: "흐림", icon: "☁️", theme: "cloudy" },
+  45: { label: "안개", icon: "🌫️", theme: "cloudy" },
+  48: { label: "짙은 안개", icon: "🌫️", theme: "cloudy" },
+  51: { label: "이슬비", icon: "🌦️", theme: "rain" },
+  53: { label: "약한 비", icon: "🌦️", theme: "rain" },
+  55: { label: "비", icon: "🌧️", theme: "rain" },
+  61: { label: "가벼운 비", icon: "🌦️", theme: "rain" },
+  63: { label: "비", icon: "🌧️", theme: "rain" },
+  65: { label: "강한 비", icon: "⛈️", theme: "rain" },
+  66: { label: "어는 비", icon: "🌧️", theme: "rain" },
+  67: { label: "강한 어는 비", icon: "⛈️", theme: "rain" },
+  71: { label: "약한 눈", icon: "🌨️", theme: "snow" },
+  73: { label: "눈", icon: "🌨️", theme: "snow" },
+  75: { label: "강한 눈", icon: "❄️", theme: "snow" },
+  77: { label: "진눈깨비", icon: "🌨️", theme: "snow" },
+  80: { label: "소나기", icon: "🌦️", theme: "rain" },
+  81: { label: "강한 소나기", icon: "🌧️", theme: "rain" },
+  82: { label: "폭우", icon: "⛈️", theme: "rain" },
+  85: { label: "약한 눈 소나기", icon: "🌨️", theme: "snow" },
+  86: { label: "눈 소나기", icon: "❄️", theme: "snow" },
+  95: { label: "뇌우", icon: "⛈️", theme: "rain" },
+  96: { label: "우박을 동반한 뇌우", icon: "⛈️", theme: "rain" },
+  99: { label: "강한 뇌우", icon: "⛈️", theme: "rain" },
 };
 
 initialize();
@@ -88,21 +91,30 @@ function bindEvents() {
     event.preventDefault();
     const city = elements.cityInput.value.trim();
     if (!city) return;
+    hideStatusMessage();
     await loadWeatherByCity(city);
   });
 
   elements.geoButton.addEventListener("click", () => {
     if (!navigator.geolocation) {
-      alert("이 브라우저에서는 위치 정보를 사용할 수 없어요.");
+      showStatusMessage("이 브라우저에서는 위치 기능을 사용할 수 없어요. 도시 검색으로 확인해 주세요.");
+      return;
+    }
+
+    hideStatusMessage();
+
+    if (!window.isSecureContext) {
+      showStatusMessage("지금 페이지는 위치 권한을 안정적으로 쓸 수 없는 환경이에요. GitHub Pages 주소나 https 주소로 열어서 다시 시도해 주세요.");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
+        hideStatusMessage();
         await loadWeatherByCoords(coords.latitude, coords.longitude, "현재 위치");
       },
-      () => {
-        alert("위치 정보를 가져오지 못했어요. 도시 검색을 사용해 주세요.");
+      (error) => {
+        showStatusMessage(getGeolocationErrorMessage(error));
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -131,7 +143,7 @@ async function loadWeatherByCity(city) {
   } catch (error) {
     console.error(error);
     setLoadingState("도시를 찾지 못했어요.");
-    alert("도시를 찾지 못했어요. 다른 도시 이름으로 다시 시도해 주세요.");
+    showStatusMessage("도시를 찾지 못했어요. 다른 도시 이름으로 다시 검색해 주세요.");
   }
 }
 
@@ -145,7 +157,7 @@ async function loadWeatherByCoords(latitude, longitude, label) {
   } catch (error) {
     console.error(error);
     setLoadingState("날씨 정보를 불러오지 못했어요.");
-    alert("날씨 데이터를 가져오는 데 실패했어요. 잠시 후 다시 시도해 주세요.");
+    showStatusMessage("날씨 데이터를 가져오는 데 실패했어요. 잠시 후 다시 시도해 주세요.");
   }
 }
 
@@ -157,7 +169,7 @@ function setLoadingState(message) {
   elements.feelsDelta.textContent = "--°";
   elements.yesterdayCondition.textContent = "잠시만 기다려 주세요";
   elements.yesterdayTemp.textContent = "--°";
-  elements.yesterdayIcon.textContent = "☁";
+  elements.yesterdayIcon.textContent = "☁️";
   elements.yesterdayRange.textContent = "최고 --° / 최저 --°";
   elements.yesterdayFeelsLike.textContent = "--°";
   elements.yesterdayPrecipitation.textContent = "--%";
@@ -167,7 +179,7 @@ function setLoadingState(message) {
   elements.yesterdayVisibility.textContent = "-- km";
   elements.conditionText.textContent = "잠시만 기다려 주세요";
   elements.currentTemp.textContent = "--°";
-  elements.currentIcon.textContent = "☁";
+  elements.currentIcon.textContent = "☁️";
   elements.tempRange.textContent = "최고 --° / 최저 --°";
   elements.feelsLike.textContent = "--°";
   elements.feelsCompareText.textContent = "어제와 비슷해요";
@@ -357,6 +369,7 @@ function renderWeather(data, airQuality, locationLabel) {
   elements.visibility.textContent = `${visibilityKm} km`;
   elements.visibilityText.textContent = describeVisibilityComparison(visibilityKm, yesterdayVisibilityKm);
   elements.tabCaption.textContent = `${next24Hours.length}시간 미리보기`;
+  hideStatusMessage();
 
   setTheme(currentWeather.theme, current.is_day);
   renderHourly(next24Hours);
@@ -422,12 +435,12 @@ function setActiveTab(tabName) {
 }
 
 function getWeatherInfo(code, isDay = true) {
-  const weather = weatherCodeMap[code] ?? { label: "보통", icon: "☁", theme: "cloudy" };
+  const weather = weatherCodeMap[code] ?? { label: "보통", icon: "☁️", theme: "cloudy" };
   if (!isDay && weather.theme === "sunny") {
     return { label: "맑은 밤", icon: "🌙", theme: "night" };
   }
   if (!isDay && weather.theme === "cloudy" && code <= 3) {
-    return { label: "구름 낀 밤", icon: "☁", theme: "night" };
+    return { label: "구름 낀 밤", icon: "☁️", theme: "night" };
   }
   return weather;
 }
@@ -593,4 +606,46 @@ function formatHourlyRain(probability) {
   if (probability <= 20) return `비 ${probability}%`;
   if (probability <= 50) return `우산 ${probability}%`;
   return `비 대비 ${probability}%`;
+}
+
+function showStatusMessage(message) {
+  if (toastTimer) {
+    window.clearTimeout(toastTimer);
+  }
+
+  elements.toast.hidden = false;
+  elements.toast.textContent = message;
+  toastTimer = window.setTimeout(() => {
+    hideStatusMessage();
+  }, 3200);
+}
+
+function hideStatusMessage() {
+  if (toastTimer) {
+    window.clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+
+  elements.toast.hidden = true;
+  elements.toast.textContent = "";
+}
+
+function getGeolocationErrorMessage(error) {
+  if (!error) {
+    return "위치 정보를 가져오지 못했어요. 도시 검색으로 확인해 주세요.";
+  }
+
+  if (error.code === error.PERMISSION_DENIED) {
+    return "위치 권한이 허용되지 않았어요. 브라우저 설정에서 위치 권한을 허용하거나 도시 검색을 사용해 주세요.";
+  }
+
+  if (error.code === error.POSITION_UNAVAILABLE) {
+    return "현재 위치 정보를 찾지 못했어요. 잠시 후 다시 시도하거나 도시 검색을 사용해 주세요.";
+  }
+
+  if (error.code === error.TIMEOUT) {
+    return "위치 확인 시간이 조금 오래 걸렸어요. 다시 시도하거나 도시 검색을 사용해 주세요.";
+  }
+
+  return "위치 정보를 가져오지 못했어요. 도시 검색으로 확인해 주세요.";
 }
