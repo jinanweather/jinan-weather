@@ -22,16 +22,25 @@
         <header class="hero glass-card">
           <div class="hero-top">
             <div>
-              <h1 id="city-name">Jinan Weather</h1>
+              <p class="location-badge" id="location-badge" hidden>현재 위치</p>
+              <h1 class="city-heading" id="city-name">
+                <span class="city-primary" id="city-primary">Jinan Weather</span>
+                <span class="city-secondary" id="city-secondary" hidden></span>
+              </h1>
               <p class="date-text" id="date-text">오늘</p>
             </div>
 
-            <button class="icon-button" id="geo-button" type="button" aria-label="현재 위치 사용">
-              <span>◎</span>
-            </button>
+            <div class="hero-actions">
+              <button class="icon-button" id="search-toggle" type="button" aria-label="도시 검색 열기" aria-expanded="false">
+                <span>⌕</span>
+              </button>
+              <button class="icon-button" id="geo-button" type="button" aria-label="현재 위치 사용">
+                <span>◎</span>
+              </button>
+            </div>
           </div>
 
-          <form class="search-bar" id="search-form">
+          <form class="search-bar" id="search-form" hidden>
             <input
               id="city-input"
               name="city"

@@ -30,15 +30,7 @@ body {
 }
 
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 120px 120px;
-  mask-image: radial-gradient(circle at center, black, transparent 75%);
-  pointer-events: none;
+  content: none;
 }
 
 .app-shell {
@@ -136,6 +128,12 @@ body::before {
   gap: 20px;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .eyebrow,
 .date-text,
 .condition,
@@ -150,6 +148,13 @@ body::before {
   color: var(--text-secondary);
 }
 
+.location-badge {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .eyebrow {
   margin: 0 0 4px;
   font-size: 0.85rem;
@@ -162,6 +167,25 @@ h1 {
   font-size: clamp(2.2rem, 7vw, 3.2rem);
   line-height: 0.96;
   font-weight: 600;
+}
+
+.city-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+
+.city-primary {
+  display: inline-block;
+}
+
+.city-secondary {
+  display: inline-block;
+  font-size: 0.52em;
+  line-height: 1.1;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.68);
 }
 
 .date-text {
@@ -185,6 +209,10 @@ h1 {
   grid-template-columns: 1fr auto;
   gap: 12px;
   margin-top: 24px;
+}
+
+.search-bar[hidden] {
+  display: none;
 }
 
 .source-note {
@@ -354,6 +382,7 @@ h1 {
   border-radius: 32px;
   min-width: 0;
   overflow: hidden;
+  box-shadow: none;
 }
 
 .tabs-header {
@@ -514,6 +543,7 @@ h1 {
   align-content: space-between;
   gap: 16px;
   border: 0;
+  box-shadow: none;
 }
 
 .compare-card-header {
@@ -671,6 +701,10 @@ h1 {
   .search-bar,
   .strip-title-row {
     display: grid;
+  }
+
+  .hero-actions {
+    justify-content: flex-start;
   }
 
   .compare-weather,

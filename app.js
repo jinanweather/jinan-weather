@@ -1,7 +1,12 @@
 const app = document.querySelector("#app");
+const LAST_SEARCH_STORAGE_KEY = "jinan_weather_last_city";
+const DEFAULT_CITY = "서울";
 
 const elements = {
   cityName: document.querySelector("#city-name"),
+  cityPrimary: document.querySelector("#city-primary"),
+  citySecondary: document.querySelector("#city-secondary"),
+  locationBadge: document.querySelector("#location-badge"),
   dateText: document.querySelector("#date-text"),
   compareSummary: document.querySelector("#compare-summary"),
   tempDelta: document.querySelector("#temp-delta"),
@@ -40,6 +45,7 @@ const elements = {
   tabCaption: document.querySelector("#tab-caption"),
   tabButtons: Array.from(document.querySelectorAll(".tab-button")),
   tabPanels: Array.from(document.querySelectorAll(".tab-panel")),
+  searchToggle: document.querySelector("#search-toggle"),
   toast: document.querySelector("#toast"),
   searchForm: document.querySelector("#search-form"),
   cityInput: document.querySelector("#city-input"),
@@ -49,6 +55,97 @@ const elements = {
 };
 
 let toastTimer = null;
+
+const CITY_QUERY_ALIASES = {
+  서울: ["서울특별시", "서울", "Seoul"],
+  seoul: ["서울", "서울특별시", "Seoul"],
+  부산: ["부산광역시", "Busan"],
+  busan: ["부산", "부산광역시", "Busan"],
+  대구: ["대구광역시", "Daegu"],
+  daegu: ["대구", "대구광역시", "Daegu"],
+  인천: ["인천광역시", "Incheon"],
+  incheon: ["인천", "인천광역시", "Incheon"],
+  광주: ["광주광역시", "Gwangju"],
+  gwangju: ["광주", "광주광역시", "Gwangju"],
+  대전: ["대전광역시", "Daejeon"],
+  daejeon: ["대전", "대전광역시", "Daejeon"],
+  울산: ["울산광역시", "Ulsan"],
+  ulsan: ["울산", "울산광역시", "Ulsan"],
+  세종: ["세종특별자치시", "Sejong"],
+  sejong: ["세종", "세종특별자치시", "Sejong"],
+  제주: ["제주특별자치도", "Jeju"],
+  제주도: ["제주특별자치도", "Jeju"],
+  jeju: ["제주", "제주특별자치도", "Jeju"],
+  경기: ["경기도", "Gyeonggi-do"],
+  강원: ["강원특별자치도", "Gangwon-do"],
+  충북: ["충청북도", "Chungcheongbuk-do"],
+  충남: ["충청남도", "Chungcheongnam-do"],
+  전북: ["전북특별자치도", "Jeollabuk-do"],
+  전남: ["전라남도", "Jeollanam-do"],
+  경북: ["경상북도", "Gyeongsangbuk-do"],
+  경남: ["경상남도", "Gyeongsangnam-do"],
+};
+
+const KNOWN_KOREAN_LOCATIONS = {
+  서울: { name: "서울", admin1: "서울특별시", country: "대한민국", latitude: 37.5665, longitude: 126.978 },
+  부산: { name: "부산", admin1: "부산광역시", country: "대한민국", latitude: 35.1796, longitude: 129.0756 },
+  대구: { name: "대구", admin1: "대구광역시", country: "대한민국", latitude: 35.8714, longitude: 128.6014 },
+  인천: { name: "인천", admin1: "인천광역시", country: "대한민국", latitude: 37.4563, longitude: 126.7052 },
+  광주: { name: "광주", admin1: "광주광역시", country: "대한민국", latitude: 35.1595, longitude: 126.8526 },
+  대전: { name: "대전", admin1: "대전광역시", country: "대한민국", latitude: 36.3504, longitude: 127.3845 },
+  울산: { name: "울산", admin1: "울산광역시", country: "대한민국", latitude: 35.5384, longitude: 129.3114 },
+  세종: { name: "세종", admin1: "세종특별자치시", country: "대한민국", latitude: 36.48, longitude: 127.289 },
+  제주: { name: "제주", admin1: "제주특별자치도", country: "대한민국", latitude: 33.4996, longitude: 126.5312 },
+  강남: { name: "강남구", admin2: "강남구", admin1: "서울특별시", country: "대한민국", latitude: 37.5172, longitude: 127.0473 },
+  강남구: { name: "강남구", admin2: "강남구", admin1: "서울특별시", country: "대한민국", latitude: 37.5172, longitude: 127.0473 },
+  서초: { name: "서초구", admin2: "서초구", admin1: "서울특별시", country: "대한민국", latitude: 37.4837, longitude: 127.0324 },
+  서초구: { name: "서초구", admin2: "서초구", admin1: "서울특별시", country: "대한민국", latitude: 37.4837, longitude: 127.0324 },
+  송파: { name: "송파구", admin2: "송파구", admin1: "서울특별시", country: "대한민국", latitude: 37.5145, longitude: 127.1059 },
+  송파구: { name: "송파구", admin2: "송파구", admin1: "서울특별시", country: "대한민국", latitude: 37.5145, longitude: 127.1059 },
+  마포: { name: "마포구", admin2: "마포구", admin1: "서울특별시", country: "대한민국", latitude: 37.5663, longitude: 126.9019 },
+  마포구: { name: "마포구", admin2: "마포구", admin1: "서울특별시", country: "대한민국", latitude: 37.5663, longitude: 126.9019 },
+  용산: { name: "용산구", admin2: "용산구", admin1: "서울특별시", country: "대한민국", latitude: 37.5323, longitude: 126.99 },
+  용산구: { name: "용산구", admin2: "용산구", admin1: "서울특별시", country: "대한민국", latitude: 37.5323, longitude: 126.99 },
+  강동: { name: "강동구", admin2: "강동구", admin1: "서울특별시", country: "대한민국", latitude: 37.5301, longitude: 127.1238 },
+  강동구: { name: "강동구", admin2: "강동구", admin1: "서울특별시", country: "대한민국", latitude: 37.5301, longitude: 127.1238 },
+  강북: { name: "강북구", admin2: "강북구", admin1: "서울특별시", country: "대한민국", latitude: 37.6396, longitude: 127.0257 },
+  강북구: { name: "강북구", admin2: "강북구", admin1: "서울특별시", country: "대한민국", latitude: 37.6396, longitude: 127.0257 },
+  강서: { name: "강서구", admin2: "강서구", admin1: "서울특별시", country: "대한민국", latitude: 37.55, longitude: 126.8495 },
+  강서구: { name: "강서구", admin2: "강서구", admin1: "서울특별시", country: "대한민국", latitude: 37.55, longitude: 126.8495 },
+  관악: { name: "관악구", admin2: "관악구", admin1: "서울특별시", country: "대한민국", latitude: 37.4784, longitude: 126.9516 },
+  관악구: { name: "관악구", admin2: "관악구", admin1: "서울특별시", country: "대한민국", latitude: 37.4784, longitude: 126.9516 },
+  광진: { name: "광진구", admin2: "광진구", admin1: "서울특별시", country: "대한민국", latitude: 37.5384, longitude: 127.0823 },
+  광진구: { name: "광진구", admin2: "광진구", admin1: "서울특별시", country: "대한민국", latitude: 37.5384, longitude: 127.0823 },
+  구로: { name: "구로구", admin2: "구로구", admin1: "서울특별시", country: "대한민국", latitude: 37.4954, longitude: 126.8874 },
+  구로구: { name: "구로구", admin2: "구로구", admin1: "서울특별시", country: "대한민국", latitude: 37.4954, longitude: 126.8874 },
+  금천: { name: "금천구", admin2: "금천구", admin1: "서울특별시", country: "대한민국", latitude: 37.4569, longitude: 126.8957 },
+  금천구: { name: "금천구", admin2: "금천구", admin1: "서울특별시", country: "대한민국", latitude: 37.4569, longitude: 126.8957 },
+  노원: { name: "노원구", admin2: "노원구", admin1: "서울특별시", country: "대한민국", latitude: 37.6542, longitude: 127.0568 },
+  노원구: { name: "노원구", admin2: "노원구", admin1: "서울특별시", country: "대한민국", latitude: 37.6542, longitude: 127.0568 },
+  도봉: { name: "도봉구", admin2: "도봉구", admin1: "서울특별시", country: "대한민국", latitude: 37.6688, longitude: 127.0471 },
+  도봉구: { name: "도봉구", admin2: "도봉구", admin1: "서울특별시", country: "대한민국", latitude: 37.6688, longitude: 127.0471 },
+  동대문: { name: "동대문구", admin2: "동대문구", admin1: "서울특별시", country: "대한민국", latitude: 37.5744, longitude: 127.0396 },
+  동대문구: { name: "동대문구", admin2: "동대문구", admin1: "서울특별시", country: "대한민국", latitude: 37.5744, longitude: 127.0396 },
+  동작: { name: "동작구", admin2: "동작구", admin1: "서울특별시", country: "대한민국", latitude: 37.5124, longitude: 126.9393 },
+  동작구: { name: "동작구", admin2: "동작구", admin1: "서울특별시", country: "대한민국", latitude: 37.5124, longitude: 126.9393 },
+  서대문: { name: "서대문구", admin2: "서대문구", admin1: "서울특별시", country: "대한민국", latitude: 37.5791, longitude: 126.9368 },
+  서대문구: { name: "서대문구", admin2: "서대문구", admin1: "서울특별시", country: "대한민국", latitude: 37.5791, longitude: 126.9368 },
+  성동: { name: "성동구", admin2: "성동구", admin1: "서울특별시", country: "대한민국", latitude: 37.5633, longitude: 127.0369 },
+  성동구: { name: "성동구", admin2: "성동구", admin1: "서울특별시", country: "대한민국", latitude: 37.5633, longitude: 127.0369 },
+  성북: { name: "성북구", admin2: "성북구", admin1: "서울특별시", country: "대한민국", latitude: 37.5894, longitude: 127.0167 },
+  성북구: { name: "성북구", admin2: "성북구", admin1: "서울특별시", country: "대한민국", latitude: 37.5894, longitude: 127.0167 },
+  양천: { name: "양천구", admin2: "양천구", admin1: "서울특별시", country: "대한민국", latitude: 37.5169, longitude: 126.8664 },
+  양천구: { name: "양천구", admin2: "양천구", admin1: "서울특별시", country: "대한민국", latitude: 37.5169, longitude: 126.8664 },
+  영등포: { name: "영등포구", admin2: "영등포구", admin1: "서울특별시", country: "대한민국", latitude: 37.5264, longitude: 126.8962 },
+  영등포구: { name: "영등포구", admin2: "영등포구", admin1: "서울특별시", country: "대한민국", latitude: 37.5264, longitude: 126.8962 },
+  은평: { name: "은평구", admin2: "은평구", admin1: "서울특별시", country: "대한민국", latitude: 37.6027, longitude: 126.9291 },
+  은평구: { name: "은평구", admin2: "은평구", admin1: "서울특별시", country: "대한민국", latitude: 37.6027, longitude: 126.9291 },
+  종로: { name: "종로구", admin2: "종로구", admin1: "서울특별시", country: "대한민국", latitude: 37.5735, longitude: 126.9788 },
+  종로구: { name: "종로구", admin2: "종로구", admin1: "서울특별시", country: "대한민국", latitude: 37.5735, longitude: 126.9788 },
+  중구: { name: "중구", admin2: "중구", admin1: "서울특별시", country: "대한민국", latitude: 37.5641, longitude: 126.9979 },
+  중랑: { name: "중랑구", admin2: "중랑구", admin1: "서울특별시", country: "대한민국", latitude: 37.6063, longitude: 127.0927 },
+  중랑구: { name: "중랑구", admin2: "중랑구", admin1: "서울특별시", country: "대한민국", latitude: 37.6063, longitude: 127.0927 },
+};
 
 const weatherCodeMap = {
   0: { label: "맑음", icon: "☀️", theme: "sunny" },
@@ -83,19 +180,53 @@ initialize();
 
 function initialize() {
   bindEvents();
-  loadWeatherByCity("Seoul");
+  loadInitialWeather();
+}
+
+async function loadInitialWeather() {
+  if (!navigator.geolocation || !window.isSecureContext) {
+    await loadWeatherByCity(DEFAULT_CITY);
+    return;
+  }
+
+  setLoadingState("현재 위치를 확인하는 중...");
+
+  try {
+    const { coords } = await requestCurrentPosition();
+    hideStatusMessage();
+    await loadWeatherByCoords(coords.latitude, coords.longitude, "현재 위치", true);
+  } catch (error) {
+    console.error(error);
+    await loadWeatherByCity(DEFAULT_CITY);
+  }
 }
 
 function bindEvents() {
+  elements.searchToggle.addEventListener("click", () => {
+    const willOpen = elements.searchForm.hidden;
+    elements.searchForm.hidden = !willOpen;
+    elements.searchToggle.setAttribute("aria-expanded", String(willOpen));
+    elements.searchToggle.setAttribute("aria-label", willOpen ? "도시 검색 닫기" : "도시 검색 열기");
+
+    if (willOpen) {
+      window.setTimeout(() => {
+        elements.cityInput.focus();
+      }, 0);
+    }
+  });
+
   elements.searchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const city = elements.cityInput.value.trim();
     if (!city) return;
     hideStatusMessage();
     await loadWeatherByCity(city);
+    elements.searchForm.hidden = true;
+    elements.searchToggle.setAttribute("aria-expanded", "false");
+    elements.searchToggle.setAttribute("aria-label", "도시 검색 열기");
   });
 
-  elements.geoButton.addEventListener("click", () => {
+  elements.geoButton.addEventListener("click", async () => {
     if (!navigator.geolocation) {
       showStatusMessage("이 브라우저에서는 위치 기능을 사용할 수 없어요. 도시 검색으로 확인해 주세요.");
       return;
@@ -108,16 +239,13 @@ function bindEvents() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        hideStatusMessage();
-        await loadWeatherByCoords(coords.latitude, coords.longitude, "현재 위치");
-      },
-      (error) => {
-        showStatusMessage(getGeolocationErrorMessage(error));
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+    try {
+      const { coords } = await requestCurrentPosition();
+      hideStatusMessage();
+      await loadWeatherByCoords(coords.latitude, coords.longitude, "현재 위치", true);
+    } catch (error) {
+      showStatusMessage(getGeolocationErrorMessage(error));
+    }
   });
 
   elements.tabButtons.forEach((button) => {
@@ -134,11 +262,10 @@ async function loadWeatherByCity(city) {
       throw new Error("도시를 찾을 수 없습니다.");
     }
 
-    const label = [cityData.name, cityData.admin1, cityData.country]
-      .filter(Boolean)
-      .join(", ");
+    const label = buildLocationLabel(cityData);
 
-    await loadWeatherByCoords(cityData.latitude, cityData.longitude, label);
+    await loadWeatherByCoords(cityData.latitude, cityData.longitude, label, false);
+    saveLastCityQuery(city);
     elements.cityInput.value = "";
   } catch (error) {
     console.error(error);
@@ -147,13 +274,14 @@ async function loadWeatherByCity(city) {
   }
 }
 
-async function loadWeatherByCoords(latitude, longitude, label) {
+async function loadWeatherByCoords(latitude, longitude, label, isCurrentLocation = false) {
   try {
     const [forecast, airQuality] = await Promise.all([
       fetchForecast(latitude, longitude),
       fetchAirQuality(latitude, longitude),
     ]);
-    renderWeather(forecast, airQuality, label);
+    const resolvedLabel = isCurrentLocation ? await resolveLocationLabel(latitude, longitude, label) : label;
+    renderWeather(forecast, airQuality, resolvedLabel, isCurrentLocation);
   } catch (error) {
     console.error(error);
     setLoadingState("날씨 정보를 불러오지 못했어요.");
@@ -161,8 +289,19 @@ async function loadWeatherByCoords(latitude, longitude, label) {
   }
 }
 
+function requestCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000,
+    });
+  });
+}
+
 function setLoadingState(message) {
-  elements.cityName.textContent = "Jinan Weather";
+  setLocationHeading("Jinan Weather");
+  elements.locationBadge.hidden = true;
   elements.dateText.textContent = message;
   elements.compareSummary.textContent = "어제와 오늘을 비교하는 중";
   elements.tempDelta.textContent = "--°";
@@ -202,19 +341,68 @@ function setLoadingState(message) {
 }
 
 async function geocodeCity(city) {
-  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
-  url.searchParams.set("name", city);
-  url.searchParams.set("count", "1");
+  const knownLocation = getKnownKoreanLocation(city);
+  if (knownLocation) {
+    return knownLocation;
+  }
+
+  const queries = buildGeocodeQueries(city);
+  const seen = new Set();
+  const candidates = [];
+
+  for (const query of queries) {
+    const results = await fetchGeocodeCandidates(query, "KR");
+    addUniqueCandidates(results, seen, candidates);
+  }
+
+  if (!candidates.length) {
+    for (const query of queries) {
+      const results = await fetchGeocodeCandidates(query);
+      addUniqueCandidates(results, seen, candidates);
+    }
+  }
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  return chooseBestGeocodeResult(city, candidates);
+}
+
+function addUniqueCandidates(results, seen, candidates) {
+  results.forEach((result) => {
+    const key = `${result.id ?? ""}-${result.latitude}-${result.longitude}-${result.name}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    candidates.push(result);
+  });
+}
+
+async function resolveLocationLabel(latitude, longitude, fallbackLabel) {
+  const url = new URL("https://geocoding-api.open-meteo.com/v1/reverse");
+  url.searchParams.set("latitude", latitude);
+  url.searchParams.set("longitude", longitude);
   url.searchParams.set("language", "ko");
   url.searchParams.set("format", "json");
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Geocoding request failed.");
-  }
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return fallbackLabel;
+    }
 
-  const data = await response.json();
-  return data.results?.[0] ?? null;
+    const data = await response.json();
+    const result = data.results?.[0];
+    if (!result) {
+      return fallbackLabel;
+    }
+
+    return buildLocationLabel(result);
+  } catch {
+    return fallbackLabel;
+  }
 }
 
 async function fetchForecast(latitude, longitude) {
@@ -291,7 +479,7 @@ async function fetchAirQuality(latitude, longitude) {
   return response.json();
 }
 
-function renderWeather(data, airQuality, locationLabel) {
+function renderWeather(data, airQuality, locationLabel, isCurrentLocation = false) {
   const current = data.current;
   const daily = data.daily;
   const hourly = data.hourly;
@@ -334,7 +522,8 @@ function renderWeather(data, airQuality, locationLabel) {
   const yesterdayAvgTemp = Math.round((daily.temperature_2m_max[yesterdayIndex] + daily.temperature_2m_min[yesterdayIndex]) / 2);
   const todayTemp = Math.round(current.temperature_2m);
 
-  elements.cityName.textContent = locationLabel;
+  setLocationHeading(locationLabel);
+  elements.locationBadge.hidden = !isCurrentLocation;
   elements.dateText.textContent = formatFullDate(current.time, data.timezone);
   elements.compareSummary.textContent = buildCompareSummary(todayTemp, yesterdayAvgTemp, todayPrecipitation, yesterdayPrecipitation);
   elements.tempDelta.textContent = formatDelta(todayTemp - yesterdayAvgTemp);
@@ -606,6 +795,197 @@ function formatHourlyRain(probability) {
   if (probability <= 20) return `비 ${probability}%`;
   if (probability <= 50) return `우산 ${probability}%`;
   return `비 대비 ${probability}%`;
+}
+
+function setLocationHeading(label) {
+  const parts = String(label)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  elements.cityPrimary.textContent = simplifyPrimaryLocationName(parts[0] ?? "Jinan Weather");
+
+  if (parts.length > 1) {
+    elements.citySecondary.hidden = false;
+    elements.citySecondary.textContent = parts.slice(1).join(", ");
+    return;
+  }
+
+  elements.citySecondary.hidden = true;
+  elements.citySecondary.textContent = "";
+}
+
+function buildLocationLabel(location) {
+  if (location.country_code === "KR" || location.country === "대한민국") {
+    return buildKoreanLocationLabel(location);
+  }
+
+  const primary = simplifyPrimaryLocationName(location.name);
+  const secondary = [location.admin1, location.country]
+    .filter(Boolean)
+    .filter((part, index, array) => array.indexOf(part) === index)
+    .filter((part) => part !== location.name && part !== primary);
+
+  return [primary, ...secondary].filter(Boolean).join(", ");
+}
+
+function buildGeocodeQueries(city) {
+  const trimmed = city.trim();
+  const normalized = trimmed.replace(/\s+/g, "");
+  const baseName = normalizeSearchText(trimmed);
+  const queries = [trimmed];
+  const suffixVariants = ["특별시", "광역시", "특별자치시", "특별자치도", "시", "군", "구", "도"];
+  const aliases = CITY_QUERY_ALIASES[trimmed] ?? CITY_QUERY_ALIASES[normalized] ?? [];
+
+  if (baseName && baseName !== trimmed && baseName !== normalized) {
+    queries.push(baseName);
+  }
+
+  if (baseName && baseName !== normalized) {
+    queries.push(normalized);
+  }
+
+  aliases.forEach((alias) => queries.push(alias));
+
+  suffixVariants.forEach((suffix) => {
+    if (!normalized.endsWith(suffix) && baseName) {
+      queries.push(`${baseName}${suffix}`);
+    }
+  });
+
+  return Array.from(new Set(queries.filter(Boolean)));
+}
+
+async function fetchGeocodeCandidates(query, countryCode) {
+  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+  url.searchParams.set("name", query);
+  url.searchParams.set("count", "10");
+  url.searchParams.set("language", "ko");
+  url.searchParams.set("format", "json");
+  if (countryCode) {
+    url.searchParams.set("countryCode", countryCode);
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Geocoding request failed.");
+  }
+
+  const data = await response.json();
+  return data.results ?? [];
+}
+
+function chooseBestGeocodeResult(input, candidates) {
+  const normalizedInput = normalizeSearchText(input);
+  const preferredNames = new Set(
+    [input, ...(CITY_QUERY_ALIASES[input] ?? []), ...(CITY_QUERY_ALIASES[normalizedInput] ?? [])]
+      .map((value) => normalizeSearchText(value))
+      .filter(Boolean)
+  );
+  const exactMatches = candidates.filter((candidate) => candidateMatchesInput(candidate, normalizedInput, "exact"));
+  const prefixMatches = candidates.filter((candidate) => candidateMatchesInput(candidate, normalizedInput, "prefix"));
+  const relevantCandidates = exactMatches.length ? exactMatches : prefixMatches.length ? prefixMatches : candidates;
+
+  const scored = relevantCandidates.map((candidate) => {
+    const candidateParts = getCandidateSearchParts(candidate);
+    const normalizedName = candidateParts[0] ?? "";
+    const normalizedAdmin = candidateParts[1] ?? "";
+    const normalizedCountry = normalizeSearchText(candidate.country);
+    const featureCode = String(candidate.feature_code ?? "");
+    const population = Number(candidate.population ?? 0);
+    let score = 0;
+
+    if (preferredNames.has(normalizedName)) score += 250;
+    if (normalizedName === normalizedInput) score += 120;
+    if (normalizedName.startsWith(normalizedInput)) score += 80;
+    if (normalizedName.includes(normalizedInput)) score += 50;
+    if (candidateParts.some((part) => part === normalizedInput)) score += 90;
+    if (candidateParts.some((part) => part.startsWith(normalizedInput))) score += 50;
+    if (normalizedAdmin === normalizedInput) score += 40;
+    if (normalizedAdmin.includes(normalizedInput)) score += 20;
+    if (normalizedCountry === "대한민국") score += 10;
+    if (featureCode === "PPLC") score += 80;
+    else if (featureCode === "PPLA") score += 60;
+    else if (featureCode.startsWith("PPL")) score += 40;
+    else score -= 80;
+    score += Math.min(Math.round(population / 50000), 40);
+
+    return { candidate, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].candidate;
+}
+
+function normalizeSearchText(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/특별자치시|특별자치도|특별시|광역시|자치시|자치도|시|군|구|도/g, "");
+}
+
+function getCandidateSearchParts(candidate) {
+  return [candidate.name, candidate.admin4, candidate.admin3, candidate.admin2, candidate.admin1]
+    .map((part) => normalizeSearchText(part))
+    .filter(Boolean);
+}
+
+function candidateMatchesInput(candidate, normalizedInput, mode = "exact") {
+  if (!normalizedInput) return false;
+
+  return getCandidateSearchParts(candidate).some((part) => {
+    if (mode === "exact") {
+      return part === normalizedInput;
+    }
+
+    return part.startsWith(normalizedInput) || normalizedInput.startsWith(part);
+  });
+}
+
+function simplifyPrimaryLocationName(value) {
+  const text = String(value ?? "").trim();
+  return text.replace(/특별자치시|특별자치도|특별시|광역시$/g, "");
+}
+
+function getKnownKoreanLocation(input) {
+  const normalized = normalizeSearchText(input);
+  return KNOWN_KOREAN_LOCATIONS[normalized] ?? null;
+}
+
+function buildKoreanLocationLabel(location) {
+  const rawParts = [location.name, location.admin4, location.admin3, location.admin2, location.admin1]
+    .filter(Boolean)
+    .map((part) => String(part).trim())
+    .filter((part, index, array) => array.indexOf(part) === index);
+
+  const district = rawParts.find((part) => /구$|군$/.test(part));
+  const cityCandidate = rawParts.find((part) => /특별시$|광역시$|특별자치시$|시$/.test(part) && !/구$|군$/.test(part));
+  const provinceCandidate = rawParts.find((part) => /도$|특별자치도$/.test(part));
+  const country = location.country || "대한민국";
+
+  if (district && cityCandidate) {
+    return `${district}, ${simplifyPrimaryLocationName(cityCandidate)}, ${country}`;
+  }
+
+  if (district && provinceCandidate) {
+    return `${district}, ${simplifyPrimaryLocationName(provinceCandidate)}, ${country}`;
+  }
+
+  if (cityCandidate) {
+    return `${simplifyPrimaryLocationName(cityCandidate)}, ${country}`;
+  }
+
+  return `${simplifyPrimaryLocationName(location.name)}, ${country}`;
+}
+
+function getInitialCityQuery() {
+  return localStorage.getItem(LAST_SEARCH_STORAGE_KEY) || DEFAULT_CITY;
+}
+
+function saveLastCityQuery(city) {
+  const trimmed = String(city ?? "").trim();
+  if (!trimmed) return;
+  localStorage.setItem(LAST_SEARCH_STORAGE_KEY, trimmed);
 }
 
 function showStatusMessage(message) {
