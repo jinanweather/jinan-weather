@@ -1,6 +1,8 @@
 :root {
-  --bg-top: #4f7df0;
-  --bg-bottom: #385fbe;
+  --bg-top: #4f91ff;
+  --bg-bottom: #7bc7ff;
+  --aurora-left-color: rgba(194, 234, 255, 0.4);
+  --aurora-right-color: rgba(255, 214, 145, 0.24);
   --text-primary: rgba(255, 255, 255, 0.96);
   --text-secondary: rgba(255, 255, 255, 0.72);
   --glass-bg: rgba(22, 32, 72, 0.28);
@@ -75,14 +77,19 @@ body::before {
 .aurora-left {
   left: -10rem;
   top: -8rem;
-  background: rgba(182, 226, 255, 0.42);
+  background: var(--aurora-left-color);
 }
 
 .aurora-right {
   right: -10rem;
   bottom: 0;
-  background: rgba(255, 199, 113, 0.22);
+  background: var(--aurora-right-color);
   animation-delay: -8s;
+}
+
+.app-shell[data-theme="sunny-day"] .aurora,
+.app-shell[data-theme="sunny-night"] .aurora {
+  display: none;
 }
 
 .weather-app {
@@ -250,12 +257,12 @@ h1 {
 .compare-weather {
   margin-top: 28px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
 .day-panel {
-  min-height: 260px;
+  min-height: 248px;
   padding: 24px;
   border-radius: 32px;
   background: rgba(255, 255, 255, 0.08);
@@ -269,6 +276,10 @@ h1 {
 
 .day-panel-today {
   background: rgba(255, 255, 255, 0.11);
+}
+
+.day-panel-tomorrow {
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .panel-label {
@@ -332,6 +343,13 @@ h1 {
   margin: 0;
 }
 
+.strip-notes {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+}
+
 .strip-title {
   font-size: 0.95rem;
   font-weight: 500;
@@ -344,7 +362,7 @@ h1 {
 
 .delta-chips {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -558,12 +576,12 @@ h1 {
 
 .compare-values {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
 .compare-column {
-  padding: 16px;
+  padding: 16px 14px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.08);
 }
@@ -575,32 +593,104 @@ h1 {
 
 .compare-column strong {
   margin-top: 6px;
-  font-size: 2.1rem;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
   font-weight: 500;
 }
 
-.weather-app[data-theme="night"] {
-  --bg-top: #0c1533;
-  --bg-bottom: #233465;
-  --glass-bg: rgba(20, 24, 43, 0.38);
+.weather-app[data-theme="sunny-day"] {
+  --bg-top: #4f91ff;
+  --bg-bottom: #7bc7ff;
+  --aurora-left-color: rgba(194, 234, 255, 0.42);
+  --aurora-right-color: rgba(255, 214, 145, 0.24);
+  --glass-bg: rgba(22, 32, 72, 0.28);
 }
 
-.weather-app[data-theme="cloudy"] {
-  --bg-top: #6a8ca8;
-  --bg-bottom: #4f6f97;
-  --glass-bg: rgba(34, 49, 72, 0.34);
+.weather-app[data-theme="sunny-night"] {
+  --bg-top: #102a63;
+  --bg-bottom: #28488c;
+  --aurora-left-color: rgba(108, 163, 255, 0.24);
+  --aurora-right-color: rgba(255, 214, 145, 0.12);
+  --glass-bg: rgba(16, 22, 42, 0.42);
 }
 
-.weather-app[data-theme="rain"] {
-  --bg-top: #4f6f97;
-  --bg-bottom: #35557c;
-  --glass-bg: rgba(17, 29, 46, 0.4);
+.weather-app[data-theme="cloudy-day"] {
+  --bg-top: #7295b8;
+  --bg-bottom: #95b3cf;
+  --aurora-left-color: rgba(214, 231, 247, 0.24);
+  --aurora-right-color: rgba(255, 243, 217, 0.12);
+  --glass-bg: rgba(34, 49, 72, 0.32);
 }
 
-.weather-app[data-theme="snow"] {
-  --bg-top: #8ab0cf;
-  --bg-bottom: #6f90af;
-  --glass-bg: rgba(31, 48, 69, 0.34);
+.weather-app[data-theme="cloudy-night"] {
+  --bg-top: #334a66;
+  --bg-bottom: #516883;
+  --aurora-left-color: rgba(146, 177, 208, 0.18);
+  --aurora-right-color: rgba(204, 214, 226, 0.12);
+  --glass-bg: rgba(18, 28, 42, 0.4);
+}
+
+.weather-app[data-theme="rain-day"] {
+  --bg-top: #587fa8;
+  --bg-bottom: #7a9fbe;
+  --aurora-left-color: rgba(184, 209, 231, 0.2);
+  --aurora-right-color: rgba(210, 228, 255, 0.14);
+  --glass-bg: rgba(18, 31, 48, 0.38);
+}
+
+.weather-app[data-theme="rain-night"] {
+  --bg-top: #21354d;
+  --bg-bottom: #38516f;
+  --aurora-left-color: rgba(104, 141, 184, 0.16);
+  --aurora-right-color: rgba(167, 188, 216, 0.1);
+  --glass-bg: rgba(12, 21, 34, 0.44);
+}
+
+.weather-app[data-theme="snow-day"] {
+  --bg-top: #8eb5d7;
+  --bg-bottom: #b8d2e8;
+  --aurora-left-color: rgba(238, 247, 255, 0.32);
+  --aurora-right-color: rgba(214, 233, 255, 0.16);
+  --glass-bg: rgba(31, 48, 69, 0.28);
+}
+
+.weather-app[data-theme="snow-night"] {
+  --bg-top: #4b6783;
+  --bg-bottom: #6d88a3;
+  --aurora-left-color: rgba(188, 218, 242, 0.16);
+  --aurora-right-color: rgba(220, 236, 255, 0.12);
+  --glass-bg: rgba(20, 31, 46, 0.4);
+}
+
+.weather-app[data-theme="fog-day"] {
+  --bg-top: #8ca3b1;
+  --bg-bottom: #b5c4ce;
+  --aurora-left-color: rgba(241, 247, 250, 0.24);
+  --aurora-right-color: rgba(226, 235, 240, 0.18);
+  --glass-bg: rgba(36, 48, 58, 0.28);
+}
+
+.weather-app[data-theme="fog-night"] {
+  --bg-top: #485560;
+  --bg-bottom: #687581;
+  --aurora-left-color: rgba(177, 188, 198, 0.14);
+  --aurora-right-color: rgba(207, 214, 220, 0.1);
+  --glass-bg: rgba(21, 27, 33, 0.42);
+}
+
+.weather-app[data-theme="dusty-day"] {
+  --bg-top: #b08a60;
+  --bg-bottom: #d2b38c;
+  --aurora-left-color: rgba(245, 226, 194, 0.22);
+  --aurora-right-color: rgba(230, 206, 171, 0.18);
+  --glass-bg: rgba(68, 49, 32, 0.26);
+}
+
+.weather-app[data-theme="dusty-night"] {
+  --bg-top: #5a4c3d;
+  --bg-bottom: #7a6853;
+  --aurora-left-color: rgba(195, 164, 126, 0.14);
+  --aurora-right-color: rgba(223, 198, 161, 0.1);
+  --glass-bg: rgba(34, 25, 18, 0.42);
 }
 
 @keyframes float {
@@ -635,8 +725,8 @@ h1 {
   }
 
   .day-panel {
-    min-height: 220px;
-    padding: 20px;
+    min-height: 210px;
+    padding: 18px;
     border-radius: 26px;
   }
 
@@ -655,6 +745,14 @@ h1 {
   .compare-card {
     padding: 20px;
   }
+
+  .compare-values {
+    gap: 10px;
+  }
+
+  .compare-column {
+    padding: 14px 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -668,6 +766,11 @@ h1 {
 
   .tabs-header {
     display: grid;
+  }
+
+  .strip-notes {
+    justify-items: start;
+    text-align: left;
   }
 
   .tab-buttons {
@@ -718,6 +821,14 @@ h1 {
   .forecast-card,
   .compare-card {
     border-radius: 20px;
+  }
+
+  .compare-values {
+    gap: 8px;
+  }
+
+  .compare-column {
+    padding: 12px 8px;
   }
 
   .daily-item {

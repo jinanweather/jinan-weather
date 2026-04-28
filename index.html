@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jinan Weather</title>
+    <meta id="theme-color-meta" name="theme-color" content="#4f91ff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Jinan Weather" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link id="app-favicon" rel="icon" href="icons/favicon-day.png" type="image/png" />
+    <link id="apple-touch-icon" rel="apple-touch-icon" href="icons/app-icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,12 +21,12 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app-shell">
+    <div class="app-shell" id="app-shell" data-theme="sunny-day">
       <div class="toast" id="toast" hidden></div>
       <div class="aurora aurora-left"></div>
       <div class="aurora aurora-right"></div>
 
-      <main class="weather-app" id="app" data-theme="sunny">
+      <main class="weather-app" id="app" data-theme="sunny-day">
         <header class="hero glass-card">
           <div class="hero-top">
             <div>
@@ -72,21 +80,38 @@
               </div>
               <p class="temp-range" id="temp-range">최고 --° / 최저 --°</p>
             </article>
+
+            <article class="day-panel day-panel-tomorrow">
+              <p class="panel-label">내일</p>
+              <p class="condition" id="tomorrow-condition">불러오는 중...</p>
+              <div class="temperature-wrap">
+                <span class="current-temp compare-temp" id="tomorrow-temp">--°</span>
+                <span class="weather-icon" id="tomorrow-icon" aria-hidden="true">☀</span>
+              </div>
+              <p class="temp-range" id="tomorrow-range">최고 --° / 최저 --°</p>
+            </article>
           </section>
 
           <section class="glass-strip comparison-strip">
             <div class="strip-title-row">
               <p class="strip-title">비교 요약</p>
-              <p class="strip-note" id="compare-summary">어제와 오늘을 비교하는 중</p>
+              <div class="strip-notes">
+                <p class="strip-note" id="compare-summary-yesterday-today">어제와 오늘을 비교하는 중</p>
+                <p class="strip-note" id="compare-summary-today-tomorrow">오늘과 내일을 비교하는 중</p>
+              </div>
             </div>
             <div class="delta-chips">
               <div class="delta-chip">
-                <span>현재 기온 차이</span>
-                <strong id="temp-delta">--°</strong>
+                <span>어제→오늘 기온</span>
+                <strong id="temp-delta-yesterday-today">--°</strong>
               </div>
               <div class="delta-chip">
-                <span>체감 차이</span>
-                <strong id="feels-delta">--°</strong>
+                <span>오늘→내일 기온</span>
+                <strong id="temp-delta-today-tomorrow">--°</strong>
+              </div>
+              <div class="delta-chip">
+                <span>오늘→내일 강수</span>
+                <strong id="rain-delta-today-tomorrow">--%</strong>
               </div>
             </div>
           </section>
@@ -106,6 +131,10 @@
                   <span class="compare-label">오늘</span>
                   <strong id="feels-like">--°</strong>
                 </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-feels-like">--°</strong>
+                </div>
               </div>
             </article>
 
@@ -122,6 +151,10 @@
                 <div class="compare-column">
                   <span class="compare-label">오늘</span>
                   <strong id="precipitation">--%</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-precipitation">--%</strong>
                 </div>
               </div>
             </article>
@@ -142,6 +175,10 @@
                   <span class="compare-label">오늘</span>
                   <strong id="humidity">--%</strong>
                 </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-humidity">--%</strong>
+                </div>
               </div>
             </article>
 
@@ -158,6 +195,10 @@
                 <div class="compare-column">
                   <span class="compare-label">오늘</span>
                   <strong id="wind-speed">-- km/h</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-wind-speed">-- km/h</strong>
                 </div>
               </div>
             </article>
@@ -176,6 +217,10 @@
                   <span class="compare-label">오늘</span>
                   <strong id="pm10">--</strong>
                 </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-pm10">--</strong>
+                </div>
               </div>
             </article>
 
@@ -193,6 +238,10 @@
                   <span class="compare-label">오늘</span>
                   <strong id="uv-index">--</strong>
                 </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-uv-index">--</strong>
+                </div>
               </div>
             </article>
 
@@ -209,6 +258,10 @@
                 <div class="compare-column">
                   <span class="compare-label">오늘</span>
                   <strong id="visibility">-- km</strong>
+                </div>
+                <div class="compare-column">
+                  <span class="compare-label">내일</span>
+                  <strong id="tomorrow-visibility">-- km</strong>
                 </div>
               </div>
             </article>

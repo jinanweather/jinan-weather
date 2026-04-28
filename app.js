@@ -1,4 +1,7 @@
 const app = document.querySelector("#app");
+const appShell = document.querySelector("#app-shell");
+const faviconLink = document.querySelector("#app-favicon");
+const themeColorMeta = document.querySelector("#theme-color-meta");
 const LAST_SEARCH_STORAGE_KEY = "jinan_weather_last_city";
 const DEFAULT_CITY = "서울";
 
@@ -8,9 +11,11 @@ const elements = {
   citySecondary: document.querySelector("#city-secondary"),
   locationBadge: document.querySelector("#location-badge"),
   dateText: document.querySelector("#date-text"),
-  compareSummary: document.querySelector("#compare-summary"),
-  tempDelta: document.querySelector("#temp-delta"),
-  feelsDelta: document.querySelector("#feels-delta"),
+  compareSummaryYesterdayToday: document.querySelector("#compare-summary-yesterday-today"),
+  compareSummaryTodayTomorrow: document.querySelector("#compare-summary-today-tomorrow"),
+  tempDeltaYesterdayToday: document.querySelector("#temp-delta-yesterday-today"),
+  tempDeltaTodayTomorrow: document.querySelector("#temp-delta-today-tomorrow"),
+  rainDeltaTodayTomorrow: document.querySelector("#rain-delta-today-tomorrow"),
   yesterdayCondition: document.querySelector("#yesterday-condition"),
   yesterdayTemp: document.querySelector("#yesterday-temp"),
   yesterdayIcon: document.querySelector("#yesterday-icon"),
@@ -25,20 +30,31 @@ const elements = {
   currentTemp: document.querySelector("#current-temp"),
   currentIcon: document.querySelector("#current-icon"),
   tempRange: document.querySelector("#temp-range"),
+  tomorrowCondition: document.querySelector("#tomorrow-condition"),
+  tomorrowTemp: document.querySelector("#tomorrow-temp"),
+  tomorrowIcon: document.querySelector("#tomorrow-icon"),
+  tomorrowRange: document.querySelector("#tomorrow-range"),
   feelsLike: document.querySelector("#feels-like"),
+  tomorrowFeelsLike: document.querySelector("#tomorrow-feels-like"),
   feelsCompareText: document.querySelector("#feels-compare-text"),
   precipitation: document.querySelector("#precipitation"),
+  tomorrowPrecipitation: document.querySelector("#tomorrow-precipitation"),
   rainCompareText: document.querySelector("#rain-compare-text"),
   humidity: document.querySelector("#humidity"),
+  tomorrowHumidity: document.querySelector("#tomorrow-humidity"),
   humidityText: document.querySelector("#humidity-text"),
   yesterdayPm10: document.querySelector("#yesterday-pm10"),
   pm10: document.querySelector("#pm10"),
+  tomorrowPm10: document.querySelector("#tomorrow-pm10"),
   pm10Text: document.querySelector("#pm10-text"),
   windSpeed: document.querySelector("#wind-speed"),
+  tomorrowWindSpeed: document.querySelector("#tomorrow-wind-speed"),
   windText: document.querySelector("#wind-text"),
   uvIndex: document.querySelector("#uv-index"),
+  tomorrowUvIndex: document.querySelector("#tomorrow-uv-index"),
   uvText: document.querySelector("#uv-text"),
   visibility: document.querySelector("#visibility"),
+  tomorrowVisibility: document.querySelector("#tomorrow-visibility"),
   visibilityText: document.querySelector("#visibility-text"),
   hourlyList: document.querySelector("#hourly-list"),
   dailyList: document.querySelector("#daily-list"),
@@ -88,14 +104,23 @@ const CITY_QUERY_ALIASES = {
 
 const KNOWN_KOREAN_LOCATIONS = {
   서울: { name: "서울", admin1: "서울특별시", country: "대한민국", latitude: 37.5665, longitude: 126.978 },
+  seoul: { name: "서울", admin1: "서울특별시", country: "대한민국", latitude: 37.5665, longitude: 126.978 },
   부산: { name: "부산", admin1: "부산광역시", country: "대한민국", latitude: 35.1796, longitude: 129.0756 },
+  busan: { name: "부산", admin1: "부산광역시", country: "대한민국", latitude: 35.1796, longitude: 129.0756 },
   대구: { name: "대구", admin1: "대구광역시", country: "대한민국", latitude: 35.8714, longitude: 128.6014 },
+  daegu: { name: "대구", admin1: "대구광역시", country: "대한민국", latitude: 35.8714, longitude: 128.6014 },
   인천: { name: "인천", admin1: "인천광역시", country: "대한민국", latitude: 37.4563, longitude: 126.7052 },
+  incheon: { name: "인천", admin1: "인천광역시", country: "대한민국", latitude: 37.4563, longitude: 126.7052 },
   광주: { name: "광주", admin1: "광주광역시", country: "대한민국", latitude: 35.1595, longitude: 126.8526 },
+  gwangju: { name: "광주", admin1: "광주광역시", country: "대한민국", latitude: 35.1595, longitude: 126.8526 },
   대전: { name: "대전", admin1: "대전광역시", country: "대한민국", latitude: 36.3504, longitude: 127.3845 },
+  daejeon: { name: "대전", admin1: "대전광역시", country: "대한민국", latitude: 36.3504, longitude: 127.3845 },
   울산: { name: "울산", admin1: "울산광역시", country: "대한민국", latitude: 35.5384, longitude: 129.3114 },
+  ulsan: { name: "울산", admin1: "울산광역시", country: "대한민국", latitude: 35.5384, longitude: 129.3114 },
   세종: { name: "세종", admin1: "세종특별자치시", country: "대한민국", latitude: 36.48, longitude: 127.289 },
+  sejong: { name: "세종", admin1: "세종특별자치시", country: "대한민국", latitude: 36.48, longitude: 127.289 },
   제주: { name: "제주", admin1: "제주특별자치도", country: "대한민국", latitude: 33.4996, longitude: 126.5312 },
+  jeju: { name: "제주", admin1: "제주특별자치도", country: "대한민국", latitude: 33.4996, longitude: 126.5312 },
   강남: { name: "강남구", admin2: "강남구", admin1: "서울특별시", country: "대한민국", latitude: 37.5172, longitude: 127.0473 },
   강남구: { name: "강남구", admin2: "강남구", admin1: "서울특별시", country: "대한민국", latitude: 37.5172, longitude: 127.0473 },
   서초: { name: "서초구", admin2: "서초구", admin1: "서울특별시", country: "대한민국", latitude: 37.4837, longitude: 127.0324 },
@@ -152,8 +177,8 @@ const weatherCodeMap = {
   1: { label: "대체로 맑음", icon: "🌤️", theme: "sunny" },
   2: { label: "구름 조금", icon: "⛅️", theme: "cloudy" },
   3: { label: "흐림", icon: "☁️", theme: "cloudy" },
-  45: { label: "안개", icon: "🌫️", theme: "cloudy" },
-  48: { label: "짙은 안개", icon: "🌫️", theme: "cloudy" },
+  45: { label: "안개", icon: "🌫️", theme: "fog" },
+  48: { label: "짙은 안개", icon: "🌫️", theme: "fog" },
   51: { label: "이슬비", icon: "🌦️", theme: "rain" },
   53: { label: "약한 비", icon: "🌦️", theme: "rain" },
   55: { label: "비", icon: "🌧️", theme: "rain" },
@@ -179,8 +204,21 @@ const weatherCodeMap = {
 initialize();
 
 function initialize() {
+  registerServiceWorker();
   bindEvents();
   loadInitialWeather();
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch((error) => {
+      console.error("Service worker registration failed:", error);
+    });
+  });
 }
 
 async function loadInitialWeather() {
@@ -303,19 +341,31 @@ function setLoadingState(message) {
   setLocationHeading("Jinan Weather");
   elements.locationBadge.hidden = true;
   elements.dateText.textContent = message;
-  elements.compareSummary.textContent = "어제와 오늘을 비교하는 중";
-  elements.tempDelta.textContent = "--°";
-  elements.feelsDelta.textContent = "--°";
+  elements.compareSummaryYesterdayToday.textContent = "어제와 오늘을 비교하는 중";
+  elements.compareSummaryTodayTomorrow.textContent = "오늘과 내일을 비교하는 중";
+  elements.tempDeltaYesterdayToday.textContent = "--°";
+  elements.tempDeltaTodayTomorrow.textContent = "--°";
+  elements.rainDeltaTodayTomorrow.textContent = "--%";
   elements.yesterdayCondition.textContent = "잠시만 기다려 주세요";
   elements.yesterdayTemp.textContent = "--°";
   elements.yesterdayIcon.textContent = "☁️";
   elements.yesterdayRange.textContent = "최고 --° / 최저 --°";
+  elements.tomorrowCondition.textContent = "잠시만 기다려 주세요";
+  elements.tomorrowTemp.textContent = "--°";
+  elements.tomorrowIcon.textContent = "☁️";
+  elements.tomorrowRange.textContent = "최고 --° / 최저 --°";
   elements.yesterdayFeelsLike.textContent = "--°";
+  elements.tomorrowFeelsLike.textContent = "--°";
   elements.yesterdayPrecipitation.textContent = "--%";
+  elements.tomorrowPrecipitation.textContent = "--%";
   elements.yesterdayHumidity.textContent = "--%";
+  elements.tomorrowHumidity.textContent = "--%";
   elements.yesterdayWindSpeed.textContent = "-- km/h";
+  elements.tomorrowWindSpeed.textContent = "-- km/h";
   elements.yesterdayUvIndex.textContent = "--";
+  elements.tomorrowUvIndex.textContent = "--";
   elements.yesterdayVisibility.textContent = "-- km";
+  elements.tomorrowVisibility.textContent = "-- km";
   elements.conditionText.textContent = "잠시만 기다려 주세요";
   elements.currentTemp.textContent = "--°";
   elements.currentIcon.textContent = "☁️";
@@ -328,6 +378,7 @@ function setLoadingState(message) {
   elements.humidityText.textContent = "쾌적함을 계산 중";
   elements.yesterdayPm10.textContent = "--";
   elements.pm10.textContent = "--";
+  elements.tomorrowPm10.textContent = "--";
   elements.pm10Text.textContent = "대기질을 계산 중";
   elements.windSpeed.textContent = "-- km/h";
   elements.windText.textContent = "바람 상태를 계산 중";
@@ -406,10 +457,26 @@ async function resolveLocationLabel(latitude, longitude, fallbackLabel) {
 }
 
 async function fetchForecast(latitude, longitude) {
+  const preferredForecast = await fetchForecastResponse(latitude, longitude, true);
+  if (hasUsableForecastData(preferredForecast)) {
+    return preferredForecast;
+  }
+
+  const fallbackForecast = await fetchForecastResponse(latitude, longitude, false);
+  if (hasUsableForecastData(fallbackForecast)) {
+    return fallbackForecast;
+  }
+
+  throw new Error("Forecast response missing usable values.");
+}
+
+async function fetchForecastResponse(latitude, longitude, useKmaModel) {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", latitude);
   url.searchParams.set("longitude", longitude);
-  url.searchParams.set("models", "kma_seamless");
+  if (useKmaModel) {
+    url.searchParams.set("models", "kma_seamless");
+  }
   url.searchParams.set(
     "current",
     [
@@ -461,6 +528,20 @@ async function fetchForecast(latitude, longitude) {
   return response.json();
 }
 
+function hasUsableForecastData(data) {
+  const requiredValues = [
+    data?.current?.temperature_2m,
+    data?.daily?.temperature_2m_max?.[0],
+    data?.daily?.temperature_2m_min?.[0],
+    data?.daily?.temperature_2m_max?.[1],
+    data?.daily?.temperature_2m_min?.[1],
+    data?.daily?.temperature_2m_max?.[2],
+    data?.daily?.temperature_2m_min?.[2],
+  ];
+
+  return requiredValues.every((value) => toFiniteNumber(value) !== null);
+}
+
 async function fetchAirQuality(latitude, longitude) {
   const url = new URL("https://air-quality-api.open-meteo.com/v1/air-quality");
   url.searchParams.set("latitude", latitude);
@@ -485,9 +566,11 @@ function renderWeather(data, airQuality, locationLabel, isCurrentLocation = fals
   const hourly = data.hourly;
   const yesterdayIndex = 0;
   const todayIndex = 1;
+  const tomorrowIndex = 2;
   const currentWeather = getWeatherInfo(current.weather_code, current.is_day);
   const currentHourIndex = findCurrentHourIndex(hourly.time, current.time);
   const yesterdayHourIndex = Math.max(0, currentHourIndex - 24);
+  const tomorrowHourIndex = Math.min(hourly.time.length - 1, currentHourIndex + 24);
   const next24Hours = hourly.time.slice(currentHourIndex, currentHourIndex + 24).map((time, index) => ({
     time,
     temperature: hourly.temperature_2m[currentHourIndex + index],
@@ -495,72 +578,114 @@ function renderWeather(data, airQuality, locationLabel, isCurrentLocation = fals
     weatherCode: hourly.weather_code[currentHourIndex + index],
   }));
 
-  const visibilityKm = Math.round((hourly.visibility[currentHourIndex] ?? 0) / 1000);
-  const yesterdayVisibilityKm = Math.round((hourly.visibility[yesterdayHourIndex] ?? 0) / 1000);
-  const uvIndex = Math.round(hourly.uv_index[currentHourIndex] ?? daily.uv_index_max[todayIndex] ?? 0);
-  const yesterdayUvIndex = Math.round(hourly.uv_index[yesterdayHourIndex] ?? daily.uv_index_max[yesterdayIndex] ?? 0);
+  const visibilityKm = roundValue(divideBy(hourly.visibility[currentHourIndex], 1000));
+  const yesterdayVisibilityKm = roundValue(divideBy(hourly.visibility[yesterdayHourIndex], 1000));
+  const tomorrowVisibilityKm = roundValue(divideBy(hourly.visibility[tomorrowHourIndex], 1000));
+  const uvIndex = roundValue(firstDefinedNumber(hourly.uv_index[currentHourIndex], daily.uv_index_max[todayIndex]));
+  const yesterdayUvIndex = roundValue(firstDefinedNumber(hourly.uv_index[yesterdayHourIndex], daily.uv_index_max[yesterdayIndex]));
+  const tomorrowUvIndex = roundValue(firstDefinedNumber(hourly.uv_index[tomorrowHourIndex], daily.uv_index_max[tomorrowIndex]));
   const yesterdayWeather = getWeatherInfo(daily.weather_code[yesterdayIndex], true);
-  const yesterdayFeelsLike = Math.round(
-    hourly.apparent_temperature[yesterdayHourIndex] ??
-      (daily.apparent_temperature_max[yesterdayIndex] + daily.apparent_temperature_min[yesterdayIndex]) / 2
+  const tomorrowWeather = getWeatherInfo(daily.weather_code[tomorrowIndex], true);
+  const yesterdayFeelsLike = roundValue(
+    firstDefinedNumber(
+      hourly.apparent_temperature[yesterdayHourIndex],
+      averageValues(daily.apparent_temperature_max[yesterdayIndex], daily.apparent_temperature_min[yesterdayIndex])
+    )
   );
-  const todayFeelsLike = Math.round(current.apparent_temperature);
-  const yesterdayPrecipitation = Math.round(
-    daily.precipitation_probability_max[yesterdayIndex] ?? hourly.precipitation_probability[yesterdayHourIndex] ?? 0
+  const todayFeelsLike = roundValue(current.apparent_temperature);
+  const tomorrowFeelsLike = roundValue(
+    firstDefinedNumber(
+      hourly.apparent_temperature[tomorrowHourIndex],
+      averageValues(daily.apparent_temperature_max[tomorrowIndex], daily.apparent_temperature_min[tomorrowIndex])
+    )
   );
-  const todayPrecipitation = Math.round(
-    current.precipitation_probability ?? daily.precipitation_probability_max[todayIndex] ?? next24Hours[0]?.precipitation ?? 0
+  const yesterdayPrecipitation = roundValue(
+    firstDefinedNumber(daily.precipitation_probability_max[yesterdayIndex], hourly.precipitation_probability[yesterdayHourIndex])
   );
-  const yesterdayHumidity = Math.round(hourly.relative_humidity_2m[yesterdayHourIndex] ?? 0);
-  const todayHumidity = Math.round(current.relative_humidity_2m);
-  const yesterdayWind = Math.round(daily.wind_speed_10m_max[yesterdayIndex] ?? hourly.wind_speed_10m[yesterdayHourIndex] ?? 0);
-  const todayWind = Math.round(current.wind_speed_10m);
+  const todayPrecipitation = roundValue(
+    firstDefinedNumber(current.precipitation_probability, daily.precipitation_probability_max[todayIndex], next24Hours[0]?.precipitation)
+  );
+  const tomorrowPrecipitation = roundValue(
+    firstDefinedNumber(daily.precipitation_probability_max[tomorrowIndex], hourly.precipitation_probability[tomorrowHourIndex])
+  );
+  const yesterdayHumidity = roundValue(hourly.relative_humidity_2m[yesterdayHourIndex]);
+  const todayHumidity = roundValue(current.relative_humidity_2m);
+  const tomorrowHumidity = roundValue(hourly.relative_humidity_2m[tomorrowHourIndex]);
+  const yesterdayWind = roundValue(firstDefinedNumber(daily.wind_speed_10m_max[yesterdayIndex], hourly.wind_speed_10m[yesterdayHourIndex]));
+  const todayWind = roundValue(current.wind_speed_10m);
+  const tomorrowWind = roundValue(firstDefinedNumber(daily.wind_speed_10m_max[tomorrowIndex], hourly.wind_speed_10m[tomorrowHourIndex]));
   const currentPm10Index = findCurrentHourIndex(airQuality.hourly.time, airQuality.current.time);
   const yesterdayPm10Index = Math.max(0, currentPm10Index - 24);
-  const todayPm10 = Math.round(airQuality.current.pm10 ?? airQuality.hourly.pm10[currentPm10Index] ?? 0);
-  const yesterdayPm10 = Math.round(airQuality.hourly.pm10[yesterdayPm10Index] ?? 0);
-  const yesterdayAvgTemp = Math.round((daily.temperature_2m_max[yesterdayIndex] + daily.temperature_2m_min[yesterdayIndex]) / 2);
-  const todayTemp = Math.round(current.temperature_2m);
+  const tomorrowPm10Index = Math.min(airQuality.hourly.time.length - 1, currentPm10Index + 24);
+  const todayPm10 = roundValue(firstDefinedNumber(airQuality.current.pm10, airQuality.hourly.pm10[currentPm10Index]));
+  const yesterdayPm10 = roundValue(airQuality.hourly.pm10[yesterdayPm10Index]);
+  const tomorrowPm10 = roundValue(airQuality.hourly.pm10[tomorrowPm10Index]);
+  const yesterdayAvgTemp = roundValue(averageValues(daily.temperature_2m_max[yesterdayIndex], daily.temperature_2m_min[yesterdayIndex]));
+  const todayTemp = roundValue(current.temperature_2m);
+  const tomorrowAvgTemp = roundValue(averageValues(daily.temperature_2m_max[tomorrowIndex], daily.temperature_2m_min[tomorrowIndex]));
 
   setLocationHeading(locationLabel);
   elements.locationBadge.hidden = !isCurrentLocation;
   elements.dateText.textContent = formatFullDate(current.time, data.timezone);
-  elements.compareSummary.textContent = buildCompareSummary(todayTemp, yesterdayAvgTemp, todayPrecipitation, yesterdayPrecipitation);
-  elements.tempDelta.textContent = formatDelta(todayTemp - yesterdayAvgTemp);
-  elements.feelsDelta.textContent = formatDelta(todayFeelsLike - yesterdayFeelsLike);
+  elements.compareSummaryYesterdayToday.textContent = buildYesterdayTodaySummary(
+    todayTemp,
+    yesterdayAvgTemp,
+    todayPrecipitation,
+    yesterdayPrecipitation
+  );
+  elements.compareSummaryTodayTomorrow.textContent = buildTodayTomorrowSummary(
+    todayTemp,
+    tomorrowAvgTemp,
+    todayPrecipitation,
+    tomorrowPrecipitation
+  );
+  elements.tempDeltaYesterdayToday.textContent = formatDeltaFromValues(todayTemp, yesterdayAvgTemp);
+  elements.tempDeltaTodayTomorrow.textContent = formatDeltaFromValues(tomorrowAvgTemp, todayTemp);
+  elements.rainDeltaTodayTomorrow.textContent = formatPercentDeltaFromValues(tomorrowPrecipitation, todayPrecipitation);
   elements.yesterdayCondition.textContent = yesterdayWeather.label;
-  elements.yesterdayTemp.textContent = `${yesterdayAvgTemp}°`;
+  elements.yesterdayTemp.textContent = formatTemperature(yesterdayAvgTemp);
   elements.yesterdayIcon.textContent = yesterdayWeather.icon;
-  elements.yesterdayRange.textContent = `최고 ${Math.round(daily.temperature_2m_max[yesterdayIndex])}° / 최저 ${Math.round(daily.temperature_2m_min[yesterdayIndex])}°`;
-  elements.yesterdayFeelsLike.textContent = `${yesterdayFeelsLike}°`;
-  elements.yesterdayPrecipitation.textContent = `비 ${yesterdayPrecipitation}%`;
-  elements.yesterdayHumidity.textContent = `${yesterdayHumidity}%`;
-  elements.yesterdayWindSpeed.textContent = `${yesterdayWind} km/h`;
-  elements.yesterdayUvIndex.textContent = String(yesterdayUvIndex);
-  elements.yesterdayVisibility.textContent = `${yesterdayVisibilityKm} km`;
+  elements.yesterdayRange.textContent = formatTemperatureRange(daily.temperature_2m_max[yesterdayIndex], daily.temperature_2m_min[yesterdayIndex]);
+  elements.yesterdayFeelsLike.textContent = formatTemperature(yesterdayFeelsLike);
+  elements.yesterdayPrecipitation.textContent = formatRainProbability(yesterdayPrecipitation);
+  elements.yesterdayHumidity.textContent = formatPercentageValue(yesterdayHumidity);
+  elements.yesterdayWindSpeed.textContent = formatSpeedValue(yesterdayWind);
+  elements.yesterdayUvIndex.textContent = formatPlainNumber(yesterdayUvIndex);
+  elements.yesterdayVisibility.textContent = formatDistanceValue(yesterdayVisibilityKm);
   elements.conditionText.textContent = currentWeather.label;
-  elements.currentTemp.textContent = `${todayTemp}°`;
+  elements.currentTemp.textContent = formatTemperature(todayTemp);
   elements.currentIcon.textContent = currentWeather.icon;
-  elements.tempRange.textContent = `최고 ${Math.round(daily.temperature_2m_max[todayIndex])}° / 최저 ${Math.round(daily.temperature_2m_min[todayIndex])}°`;
-  elements.feelsLike.textContent = `${todayFeelsLike}°`;
+  elements.tempRange.textContent = formatTemperatureRange(daily.temperature_2m_max[todayIndex], daily.temperature_2m_min[todayIndex]);
+  elements.tomorrowCondition.textContent = tomorrowWeather.label;
+  elements.tomorrowTemp.textContent = formatTemperature(tomorrowAvgTemp);
+  elements.tomorrowIcon.textContent = tomorrowWeather.icon;
+  elements.tomorrowRange.textContent = formatTemperatureRange(daily.temperature_2m_max[tomorrowIndex], daily.temperature_2m_min[tomorrowIndex]);
+  elements.feelsLike.textContent = formatTemperature(todayFeelsLike);
+  elements.tomorrowFeelsLike.textContent = formatTemperature(tomorrowFeelsLike);
   elements.feelsCompareText.textContent = describeFeelsLikeComparison(todayFeelsLike, yesterdayFeelsLike);
-  elements.precipitation.textContent = `비 ${todayPrecipitation}%`;
+  elements.precipitation.textContent = formatRainProbability(todayPrecipitation);
+  elements.tomorrowPrecipitation.textContent = formatRainProbability(tomorrowPrecipitation);
   elements.rainCompareText.textContent = describeRainComparison(todayPrecipitation, yesterdayPrecipitation);
-  elements.humidity.textContent = `${todayHumidity}%`;
+  elements.humidity.textContent = formatPercentageValue(todayHumidity);
+  elements.tomorrowHumidity.textContent = formatPercentageValue(tomorrowHumidity);
   elements.humidityText.textContent = describeHumidityComparison(todayHumidity, yesterdayHumidity);
   elements.yesterdayPm10.textContent = formatPm10(yesterdayPm10);
   elements.pm10.textContent = formatPm10(todayPm10);
+  elements.tomorrowPm10.textContent = formatPm10(tomorrowPm10);
   elements.pm10Text.textContent = describePm10Comparison(todayPm10, yesterdayPm10);
-  elements.windSpeed.textContent = `${todayWind} km/h`;
+  elements.windSpeed.textContent = formatSpeedValue(todayWind);
+  elements.tomorrowWindSpeed.textContent = formatSpeedValue(tomorrowWind);
   elements.windText.textContent = describeWindComparison(todayWind, yesterdayWind);
-  elements.uvIndex.textContent = String(uvIndex);
+  elements.uvIndex.textContent = formatPlainNumber(uvIndex);
+  elements.tomorrowUvIndex.textContent = formatPlainNumber(tomorrowUvIndex);
   elements.uvText.textContent = describeUvComparison(uvIndex, yesterdayUvIndex);
-  elements.visibility.textContent = `${visibilityKm} km`;
+  elements.visibility.textContent = formatDistanceValue(visibilityKm);
+  elements.tomorrowVisibility.textContent = formatDistanceValue(tomorrowVisibilityKm);
   elements.visibilityText.textContent = describeVisibilityComparison(visibilityKm, yesterdayVisibilityKm);
   elements.tabCaption.textContent = `${next24Hours.length}시간 미리보기`;
   hideStatusMessage();
 
-  setTheme(currentWeather.theme, current.is_day);
+  setTheme(currentWeather.theme, current.is_day, todayPm10);
   renderHourly(next24Hours);
   renderDaily(daily);
 }
@@ -574,8 +699,8 @@ function renderHourly(hourlyData) {
 
     item.querySelector(".hourly-time").textContent = index === 0 ? "지금" : formatHour(hour.time);
     item.querySelector(".hourly-icon").textContent = weather.icon;
-    item.querySelector(".hourly-temp").textContent = `${Math.round(hour.temperature)}°`;
-    item.querySelector(".hourly-rain").textContent = formatHourlyRain(Math.round(hour.precipitation));
+    item.querySelector(".hourly-temp").textContent = formatTemperature(roundValue(hour.temperature));
+    item.querySelector(".hourly-rain").textContent = formatHourlyRain(roundValue(hour.precipitation));
 
     elements.hourlyList.appendChild(item);
   });
@@ -584,24 +709,26 @@ function renderHourly(hourlyData) {
 function renderDaily(daily) {
   elements.dailyList.innerHTML = "";
 
-  const minTemp = Math.min(...daily.temperature_2m_min.slice(1));
-  const maxTemp = Math.max(...daily.temperature_2m_max.slice(1));
+  const minValues = daily.temperature_2m_min.slice(1).map((value) => toFiniteNumber(value)).filter((value) => value !== null);
+  const maxValues = daily.temperature_2m_max.slice(1).map((value) => toFiniteNumber(value)).filter((value) => value !== null);
+  const minTemp = minValues.length ? Math.min(...minValues) : 0;
+  const maxTemp = maxValues.length ? Math.max(...maxValues) : 0;
   const range = Math.max(1, maxTemp - minTemp);
 
   daily.time.slice(1).forEach((time, offset) => {
     const index = offset + 1;
     const item = elements.dailyTemplate.content.firstElementChild.cloneNode(true);
     const weather = getWeatherInfo(daily.weather_code[index], true);
-    const low = daily.temperature_2m_min[index];
-    const high = daily.temperature_2m_max[index];
-    const left = ((low - minTemp) / range) * 100;
-    const width = ((high - low) / range) * 100;
+    const low = toFiniteNumber(daily.temperature_2m_min[index]);
+    const high = toFiniteNumber(daily.temperature_2m_max[index]);
+    const left = low === null ? 0 : ((low - minTemp) / range) * 100;
+    const width = low === null || high === null ? 8 : ((high - low) / range) * 100;
 
     item.querySelector(".daily-day").textContent = index === 1 ? "오늘" : formatWeekday(time);
     item.querySelector(".daily-icon").textContent = weather.icon;
     item.querySelector(".daily-text").textContent = weather.label;
-    item.querySelector(".daily-low").textContent = `${Math.round(low)}°`;
-    item.querySelector(".daily-high").textContent = `${Math.round(high)}°`;
+    item.querySelector(".daily-low").textContent = formatTemperature(roundValue(low));
+    item.querySelector(".daily-high").textContent = formatTemperature(roundValue(high));
     item.querySelector(".bar-range").style.left = `${left}%`;
     item.querySelector(".bar-range").style.width = `${Math.max(width, 8)}%`;
 
@@ -626,16 +753,47 @@ function setActiveTab(tabName) {
 function getWeatherInfo(code, isDay = true) {
   const weather = weatherCodeMap[code] ?? { label: "보통", icon: "☁️", theme: "cloudy" };
   if (!isDay && weather.theme === "sunny") {
-    return { label: "맑은 밤", icon: "🌙", theme: "night" };
+    return { label: "맑은 밤", icon: "🌙", theme: "sunny" };
   }
   if (!isDay && weather.theme === "cloudy" && code <= 3) {
-    return { label: "구름 낀 밤", icon: "☁️", theme: "night" };
+    return { label: "구름 낀 밤", icon: "☁️", theme: "cloudy" };
   }
   return weather;
 }
 
-function setTheme(theme, isDay) {
-  app.dataset.theme = isDay ? theme : "night";
+function setTheme(theme, isDay, pm10 = 0) {
+  const themeName = resolveThemeName(theme, isDay, pm10);
+  app.dataset.theme = themeName;
+  if (appShell) {
+    appShell.dataset.theme = themeName;
+  }
+  updateBrowserThemeAssets(themeName);
+}
+
+function resolveThemeName(theme, isDay, pm10) {
+  const baseTheme = Number(pm10) > 80 ? "dusty" : normalizeThemeName(theme);
+  return `${baseTheme}-${isDay ? "day" : "night"}`;
+}
+
+function normalizeThemeName(theme) {
+  if (["sunny", "cloudy", "rain", "snow", "fog", "dusty"].includes(theme)) {
+    return theme;
+  }
+
+  return "cloudy";
+}
+
+function updateBrowserThemeAssets(themeName) {
+  const isNight = String(themeName).endsWith("-night");
+
+  if (faviconLink) {
+    faviconLink.href = isNight ? "icons/favicon-night.png" : "icons/favicon-day.png";
+    faviconLink.type = "image/png";
+  }
+
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute("content", isNight ? "#102a63" : "#4f91ff");
+  }
 }
 
 function findCurrentHourIndex(times, currentTime) {
@@ -671,12 +829,99 @@ function isLikelyDaytime(value) {
   return hour >= 7 && hour < 19;
 }
 
+function toFiniteNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function roundValue(value) {
+  const numeric = toFiniteNumber(value);
+  return numeric === null ? null : Math.round(numeric);
+}
+
+function firstDefinedNumber(...values) {
+  for (const value of values) {
+    const numeric = toFiniteNumber(value);
+    if (numeric !== null) {
+      return numeric;
+    }
+  }
+
+  return null;
+}
+
+function averageValues(first, second) {
+  const a = toFiniteNumber(first);
+  const b = toFiniteNumber(second);
+  if (a === null || b === null) {
+    return null;
+  }
+
+  return (a + b) / 2;
+}
+
+function divideBy(value, divisor) {
+  const numeric = toFiniteNumber(value);
+  return numeric === null ? null : numeric / divisor;
+}
+
 function formatDelta(delta) {
   const rounded = Math.round(delta);
   return `${rounded > 0 ? "+" : ""}${rounded}°`;
 }
 
+function formatDeltaFromValues(currentValue, previousValue) {
+  if (currentValue === null || previousValue === null) {
+    return "--°";
+  }
+
+  return formatDelta(currentValue - previousValue);
+}
+
+function formatPercentDelta(delta) {
+  const rounded = Math.round(delta);
+  return `${rounded > 0 ? "+" : ""}${rounded}%`;
+}
+
+function formatPercentDeltaFromValues(currentValue, previousValue) {
+  if (currentValue === null || previousValue === null) {
+    return "--%";
+  }
+
+  return formatPercentDelta(currentValue - previousValue);
+}
+
+function formatTemperature(value) {
+  return value === null ? "--°" : `${value}°`;
+}
+
+function formatTemperatureRange(maxValue, minValue) {
+  const max = roundValue(maxValue);
+  const min = roundValue(minValue);
+  return `최고 ${formatTemperature(max)} / 최저 ${formatTemperature(min)}`;
+}
+
+function formatRainProbability(value) {
+  return value === null ? "비 --%" : `비 ${value}%`;
+}
+
+function formatPercentageValue(value) {
+  return value === null ? "--%" : `${value}%`;
+}
+
+function formatSpeedValue(value) {
+  return value === null ? "-- km/h" : `${value} km/h`;
+}
+
+function formatDistanceValue(value) {
+  return value === null ? "-- km" : `${value} km`;
+}
+
+function formatPlainNumber(value) {
+  return value === null ? "--" : String(value);
+}
+
 function describeFeelsLikeComparison(today, yesterday) {
+  if (today === null || yesterday === null) return "체감은 아직 정리 중이에요";
   const delta = Math.round(today - yesterday);
   const amount = Math.abs(delta);
   if (amount <= 1) return "체감은 어제와 비슷해요";
@@ -685,12 +930,14 @@ function describeFeelsLikeComparison(today, yesterday) {
 }
 
 function describeHumidityComparison(today, yesterday) {
+  if (today === null || yesterday === null) return "습도는 아직 정리 중이에요";
   const delta = today - yesterday;
   if (Math.abs(delta) <= 4) return "습도가 어제와 비슷해요";
   return delta > 0 ? `어제보다 ${Math.round(delta)}% 더 습해요` : `어제보다 ${Math.round(Math.abs(delta))}% 더 건조해요`;
 }
 
 function describeWindComparison(today, yesterday) {
+  if (today === null || yesterday === null) return "바람 상태를 정리 중이에요";
   const delta = today - yesterday;
   const amount = Math.round(Math.abs(delta));
   if (amount <= 3) return "바람 세기는 어제와 비슷해요";
@@ -699,6 +946,7 @@ function describeWindComparison(today, yesterday) {
 }
 
 function describeUv(index) {
+  if (index === null) return "확인 중";
   if (index <= 2) return "낮은 수준";
   if (index <= 5) return "보통 수준";
   if (index <= 7) return "높은 수준";
@@ -707,6 +955,7 @@ function describeUv(index) {
 }
 
 function describeUvComparison(today, yesterday) {
+  if (today === null || yesterday === null) return "자외선 지수를 정리 중이에요";
   const delta = today - yesterday;
   if (today >= 8) return `${describeUv(today)}, 한낮엔 모자나 선글라스를 챙기면 좋아요`;
   if (Math.abs(delta) <= 1) return `${describeUv(today)}, 어제와 비슷해요`;
@@ -714,6 +963,7 @@ function describeUvComparison(today, yesterday) {
 }
 
 function describeVisibility(km) {
+  if (km === null) return "가시거리 확인 중이에요";
   if (km >= 16) return "시야가 아주 깨끗해요";
   if (km >= 10) return "대체로 선명해요";
   if (km >= 5) return "약간 흐릿해요";
@@ -721,13 +971,17 @@ function describeVisibility(km) {
 }
 
 function describeVisibilityComparison(today, yesterday) {
+  if (today === null || yesterday === null) return "가시거리를 정리 중이에요";
   const delta = today - yesterday;
   if (today <= 5) return `${describeVisibility(today)}, 이동할 때 조금 더 주의해 주세요`;
   if (Math.abs(delta) <= 1) return `${describeVisibility(today)}, 어제와 비슷해요`;
   return delta > 0 ? `${describeVisibility(today)}, 어제보다 더 선명해요` : `${describeVisibility(today)}, 어제보다 조금 더 흐려요`;
 }
 
-function buildCompareSummary(todayTemp, yesterdayTemp, todayRain, yesterdayRain) {
+function buildYesterdayTodaySummary(todayTemp, yesterdayTemp, todayRain, yesterdayRain) {
+  if (todayTemp === null || yesterdayTemp === null || todayRain === null || yesterdayRain === null) {
+    return "어제와 오늘 날씨를 정리 중이에요";
+  }
   const tempDelta = todayTemp - yesterdayTemp;
   const rainDelta = todayRain - yesterdayRain;
   if (tempDelta >= 2 && todayRain <= 30) return `어제보다 ${Math.round(tempDelta)}° 더 따뜻해서 가볍게 나서기 좋아요`;
@@ -738,7 +992,24 @@ function buildCompareSummary(todayTemp, yesterdayTemp, todayRain, yesterdayRain)
   return "어제와 비슷한 하루예요";
 }
 
+function buildTodayTomorrowSummary(todayTemp, tomorrowTemp, todayRain, tomorrowRain) {
+  if (todayTemp === null || tomorrowTemp === null || todayRain === null || tomorrowRain === null) {
+    return "오늘과 내일 날씨를 정리 중이에요";
+  }
+  const tempDelta = tomorrowTemp - todayTemp;
+  const rainDelta = tomorrowRain - todayRain;
+  if (tempDelta >= 2 && tomorrowRain <= 30) return `내일은 오늘보다 ${Math.round(tempDelta)}° 더 따뜻해서 한결 가볍게 나서기 좋아요`;
+  if (tempDelta <= -2 && tomorrowRain >= 40) {
+    return `내일은 오늘보다 ${Math.round(Math.abs(tempDelta))}° 더 서늘하고 비 가능성도 더 높아요`;
+  }
+  if (tomorrowRain >= 60) return `내일은 비 올 확률이 ${tomorrowRain}%라 우산을 챙기면 좋아요`;
+  if (rainDelta >= 10) return `내일은 오늘보다 비 가능성이 높아서 외출 전에 하늘을 한 번 더 보면 좋아요`;
+  if (rainDelta <= -10) return "내일은 오늘보다 비 걱정이 덜해서 조금 더 가볍게 움직여도 괜찮아요";
+  return "내일은 오늘과 비슷한 흐름이에요";
+}
+
 function getPm10Grade(value) {
+  if (value === null) return "확인 중";
   if (value <= 30) return "좋음";
   if (value <= 80) return "보통";
   if (value <= 150) return "나쁨";
@@ -746,10 +1017,12 @@ function getPm10Grade(value) {
 }
 
 function formatPm10(value) {
+  if (value === null) return "--";
   return `${Math.round(value)}㎍/㎥`;
 }
 
 function describePm10Comparison(today, yesterday) {
+  if (today === null || yesterday === null) return "미세먼지 정보를 정리 중이에요";
   const delta = Math.round(today - yesterday);
   const amount = Math.abs(delta);
   const grade = getPm10Grade(today);
@@ -774,6 +1047,7 @@ function describePm10Comparison(today, yesterday) {
 }
 
 function describeRainComparison(today, yesterday) {
+  if (today === null || yesterday === null) return "강수 확률을 정리 중이에요";
   if (today <= 20) {
     return yesterday >= 40
       ? `비 올 확률이 ${today}%라 어제보다 한결 가벼워요`
@@ -792,6 +1066,7 @@ function describeRainComparison(today, yesterday) {
 }
 
 function formatHourlyRain(probability) {
+  if (probability === null) return "비 --%";
   if (probability <= 20) return `비 ${probability}%`;
   if (probability <= 50) return `우산 ${probability}%`;
   return `비 대비 ${probability}%`;

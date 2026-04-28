@@ -1,0 +1,20 @@
+{
+  "name": "Jinan Weather",
+  "short_name": "Jinan Weather",
+  "description": "어제, 오늘, 내일 날씨를 비교해서 보여주는 날씨 웹앱",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#4f91ff",
+  "theme_color": "#4f91ff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
